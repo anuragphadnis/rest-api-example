@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 import http from 'http';
 import config from 'config';
 
@@ -15,68 +16,88 @@ const writeResponse = (response, statusCode, contentType, body) => {
   response.end();
 };
 
+const methodNotAllowed = (request, response) => {
+  const apiResponse = `${request.method} cannot be done on this url`;
+  const statusCode = 405;
+  writeResponse(response, statusCode, '{content-type:text}', apiResponse);
+};
+
+const _allUserGet = response => {
+  const apiResponse = JSON.parse(users.readAllUsers());
+  writeResponse(response, apiResponse.statusCode, '{content-type:text}', apiResponse.message);
+};
+
+const operationOnAllUsers = (request, response) => {
+  switch (request.method) {
+    case 'GET':
+      _allUserGet(response);
+      break;
+    default:
+      methodNotAllowed(request, response);
+  }
+};
+
+const _singleUserGet = (userId, response) => {
+  const apiResponse = JSON.parse(users.readUserById(userId));
+  writeResponse(response, apiResponse.statusCode, '{content-type:text}', apiResponse.message);
+};
+const _singleUserPOST = (userId, request, response) => {
+  let requestBody = '';
+  request.on('data', chunk => {
+    requestBody += chunk;
+  });
+  request.on('end', () => {
+    const apiResponse = JSON.parse(users.addUser(userId, requestBody));
+    writeResponse(response, apiResponse.statusCode, '{content-type:text}', apiResponse.message);
+  });
+};
+
+const _singleUserPut = (userId, request, response) => {
+  let requestBody = '';
+  request.on('data', chunk => {
+    requestBody += chunk;
+  });
+  request.on('end', () => {
+    const apiResponse = JSON.parse(users.updateUser(userId, requestBody));
+    writeResponse(response, apiResponse.statusCode, '{content-type:text}', apiResponse.message);
+  });
+};
+
+const _singleUserDelete = (userId, response) => {
+  const apiResponse = JSON.parse(users.deleteUser(userId));
+  writeResponse(response, apiResponse.statusCode, '{content-type:text}', apiResponse.message);
+};
+
+const operationOnSingleUser = (attributes, request, response) => {
+  const userId = attributes[0];
+  switch (request.method) {
+    case 'GET':
+      _singleUserGet(userId, response);
+      break;
+
+    case 'POST':
+      _singleUserPOST(userId, request, response);
+      break;
+
+    case 'PUT':
+      _singleUserPut(userId, request, response);
+      break;
+
+    case 'DELETE':
+      _singleUserDelete(userId, response);
+      break;
+
+    default:
+      methodNotAllowed(request, response);
+  }
+};
+
 const user = (attributes, request, response) => {
   if (attributes.length === 0) {
-    let userData;
-    switch (request.method) {
-      case 'GET':
-        userData = users.readAllUsers();
-        writeResponse(response, 200, '{content-type:text}', userData);
-        break;
-      default:
-        writeResponse(
-          response,
-          404,
-          '{content-type:text}',
-          `${request.method} cannot be done on this url`,
-        );
-    }
+    operationOnAllUsers(request, response);
   }
   if (attributes.length !== 0) {
-    const userId = attributes[0];
-    let userData;
-    let requestBody;
-    switch (request.method) {
-      case 'GET':
-        userData = users.readUserById(userId);
-        writeResponse(response, 200, '{content-type:text}', userData);
-        break;
-
-      case 'POST':
-        requestBody = '';
-        request.on('data', chunk => {
-          requestBody += chunk;
-        });
-        request.on('end', () => {
-          users.addUser(userId, requestBody);
-          writeResponse(response, 200, '{content-type:text}', 'User Added');
-        });
-        break;
-
-      case 'PUT':
-        requestBody = '';
-        request.on('data', chunk => {
-          requestBody += chunk;
-        });
-        request.on('end', () => {
-          users.addUser(userId, requestBody);
-          writeResponse(response, 200, '{content-type:text}', 'user updated');
-        });
-        break;
-
-      case 'DELETE':
-        users.deleteUser(userId);
-        writeResponse(response, 200, '{content-type:text}', 'User Deleted');
-        break;
-
-      default:
-        writeResponse(
-          response,
-          200,
-          '{content-type:text}',
-          `${request.method} cannot be done on this url`,
-        );
-    }
+    operationOnSingleUser(attributes, request, response);
   }
 };
 
