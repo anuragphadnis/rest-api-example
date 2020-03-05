@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "build-lib": "npx babel lib --out-dir dist/lib",
+    "build-server": "npx babel src --out-dir dist/src",
+    "build": "npm run build-server && npm run build-lib",
+    "server": "npm run build && node dist/src/server.js",
+    "start": "npm run server"
   },
   "repository": {
     "type": "git",
@@ -18,11 +22,13 @@
   },
   "homepage": "https://gitlab.com/anuragphadnis/nodebasic#readme",
   "dependencies": {
+    "config": "3.3.0",
     "husky": "4.2.3"
   },
   "devDependencies": {
     "@babel/cli": "7.8.4",
     "@babel/core": "7.8.7",
+    "@babel/preset-env": "7.8.7",
     "eslint": "6.8.0",
     "eslint-config-airbnb-base": "14.0.0",
     "eslint-plugin-import": "2.20.1"
