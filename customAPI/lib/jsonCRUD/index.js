@@ -20,9 +20,14 @@ const writeDataInFile = data => {
  * @param  {function} callback callback function to be executed
  */
 const addUser = (userId, userDetails) => {
-  const allUsers = JSON.parse(fs.readFileSync(FILE_NAME));
-  allUsers[userId] = userDetails;
-  writeDataInFile(allUsers);
+  try {
+    const allUsers = JSON.parse(fs.readFileSync(FILE_NAME, 'utf-8'));
+    allUsers[userId] = userDetails;
+    writeDataInFile(allUsers);
+    return JSON.stringify({ statusCode: 200, message: 'User Has Been created' });
+  } catch (error) {
+    return JSON.stringify({ statusCode: 500, message: error.message });
+  }
 };
 
 /**
@@ -30,9 +35,17 @@ const addUser = (userId, userDetails) => {
  * @param {string} userId Id of users to be deleted
  */
 const deleteUser = userId => {
-  const allUsers = JSON.parse(fs.readFileSync(FILE_NAME));
-  delete allUsers[userId];
-  writeDataInFile(allUsers);
+  try {
+    const allUsers = JSON.parse(fs.readFileSync(FILE_NAME, 'utf-8'));
+    if (!(userId in allUsers)) {
+      throw new Error('User Not Found');
+    }
+    delete allUsers[userId];
+    writeDataInFile(allUsers);
+    return JSON.stringify({ statusCode: 200, message: 'User Has Been deleted' });
+  } catch (error) {
+    return JSON.stringify({ statusCode: 500, message: error.message });
+  }
 };
 
 /**
@@ -41,9 +54,17 @@ const deleteUser = userId => {
  * @param  {string} userDetails Details about the user
  */
 const updateUser = (userId, userDetails) => {
-  const allUsers = JSON.parse(fs.readFileSync(FILE_NAME));
-  allUsers[userId] = userDetails;
-  writeDataInFile(allUsers);
+  try {
+    const allUsers = JSON.parse(fs.readFileSync(FILE_NAME, 'utf-8'));
+    if (!allUsers[userId]) {
+      throw new Error('User Not Found');
+    }
+    allUsers[userId] = userDetails;
+    writeDataInFile(allUsers);
+    return JSON.stringify({ statusCode: 200, message: 'User Has Been updated' });
+  } catch (error) {
+    return JSON.stringify({ statusCode: 500, message: error.message });
+  }
 };
 
 /**
@@ -51,8 +72,12 @@ const updateUser = (userId, userDetails) => {
  * @returns {string} Data of all of the users
  */
 const readAllUsers = () => {
-  const allUsers = fs.readFileSync(FILE_NAME);
-  return allUsers;
+  try {
+    const allUsers = fs.readFileSync(FILE_NAME, 'utf-8');
+    return JSON.stringify({ statusCode: 200, message: allUsers });
+  } catch (error) {
+    return JSON.stringify({ statusCode: 500, message: error.message });
+  }
 };
 
 /**
@@ -61,8 +86,15 @@ const readAllUsers = () => {
  * @returns {string} Details about that user if found, empty string otherwise
  */
 const readUserById = userId => {
-  const allUsers = JSON.parse(fs.readFileSync(FILE_NAME));
-  return allUsers[userId];
+  try {
+    const allUsers = JSON.parse(fs.readFileSync(FILE_NAME));
+    if (!allUsers[userId]) {
+      throw new Error('User Not Found');
+    }
+    return JSON.stringify({ statusCode: 200, message: allUsers[userId] });
+  } catch (error) {
+    return JSON.stringify({ statusCode: 500, message: error.message });
+  }
 };
 
 export {
