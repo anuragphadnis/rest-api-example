@@ -100,7 +100,7 @@ const readUserById = userId => {
 export {
   addUser,
   deleteUser,
-  updateUser,
   readAllUsers,
   readUserById,
+  updateUser,
 };
