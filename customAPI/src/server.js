@@ -4,29 +4,53 @@ import config from 'config';
 
 import * as users from '../lib/jsonCRUD';
 
-const sendError = (statusCode, response) => {
-  response.writeHead(statusCode, '{content-type: text}');
+/**
+ * Sends error response with status code 404
+ * @param  {object} response Response object
+ */
+const send404Error = response => {
+  response.writeHead(404, '{content-type: text}');
   response.write('Resource not found');
   response.end();
 };
 
+/**
+ * Writes a response back to the user
+ * @param  {object} response response object of the user
+ * @param  {number} statusCode status code to be sent in reponse
+ * @param  {string} contentType type of content in response
+ * @param  {string} body body of the response to be sent
+ */
 const writeResponse = (response, statusCode, contentType, body) => {
   response.writeHead(statusCode, contentType);
   response.write(body);
   response.end();
 };
-
+/**
+ * Sends a response of method not allowed
+ * @param  {object} request request from the user
+ * @param  {object} response response sent to the user
+ */
 const methodNotAllowed = (request, response) => {
   const apiResponse = `${request.method} cannot be done on this url`;
   const statusCode = 405;
   writeResponse(response, statusCode, '{content-type:text}', apiResponse);
 };
 
+/**
+ * Get data of all users
+ * @param {object} response response object to be sent to the user
+ */
 const _allUserGet = response => {
   const apiResponse = JSON.parse(users.readAllUsers());
   writeResponse(response, apiResponse.statusCode, '{content-type:text}', apiResponse.message);
 };
 
+/**
+ * Calls supported functions for operations on all users
+ * @param  {object} request request from the user
+ * @param  {object} response response sent to the user
+ */
 const operationOnAllUsers = (request, response) => {
   switch (request.method) {
     case 'GET':
@@ -37,10 +61,22 @@ const operationOnAllUsers = (request, response) => {
   }
 };
 
+/**
+ * Gets the data of user by its Id from database
+ * @param {*} userId userid of the user
+ * @param  {object} response response sent to the user
+ */
 const _singleUserGet = (userId, response) => {
   const apiResponse = JSON.parse(users.readUserById(userId));
   writeResponse(response, apiResponse.statusCode, '{content-type:text}', apiResponse.message);
 };
+
+/**
+ * Stores data of new user in the database, updates data if user already exists
+ * @param {string} userId userid of the user
+ * @param {object} request request sent from the user
+ * @param  {object} response response sent to the user
+ */
 const _singleUserPOST = (userId, request, response) => {
   let requestBody = '';
   request.on('data', chunk => {
@@ -52,6 +88,12 @@ const _singleUserPOST = (userId, request, response) => {
   });
 };
 
+/**
+ * Updates data of existing user
+ * @param {string} userId userid of the user
+ * @param {object} request request sent from the user
+ * @param  {object} response response sent to the user
+ */
 const _singleUserPut = (userId, request, response) => {
   let requestBody = '';
   request.on('data', chunk => {
@@ -63,11 +105,22 @@ const _singleUserPut = (userId, request, response) => {
   });
 };
 
+/**
+ * Deletes already existing user
+ * @param {string} userId userid of the user
+ * @param  {object} response response sent to the user
+ */
 const _singleUserDelete = (userId, response) => {
   const apiResponse = JSON.parse(users.deleteUser(userId));
   writeResponse(response, apiResponse.statusCode, '{content-type:text}', apiResponse.message);
 };
 
+/**
+ * Calls respective functions for all supported operations on a single user identified by its userId
+ * @param {array} attributes url splitted in the form of array
+ * @param {object} request request sent from the user
+ * @param  {object} response response sent to the user
+ */
 const operationOnSingleUser = (attributes, request, response) => {
   const userId = attributes[0];
   switch (request.method) {
@@ -92,6 +145,12 @@ const operationOnSingleUser = (attributes, request, response) => {
   }
 };
 
+/**
+ * All operations on user endpoint
+ * @param {array} attributes url splitted in the form of array
+ * @param {object} request request sent from the user
+ * @param  {object} response response sent to the user
+ */
 const user = (attributes, request, response) => {
   if (attributes.length === 0) {
     operationOnAllUsers(request, response);
@@ -108,6 +167,6 @@ http.createServer((request, response) => {
       user(attributes.slice(1), request, response);
       break;
     default:
-      sendError(404, response);
+      send404Error(response);
   }
 }).listen(config.get('PORT'));
